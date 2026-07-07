@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Meta PE Prep Tracker
 
-## Getting Started
+A 62-day tracker (7 Jul → 6 Sep 2026) for Meta Production Engineer interview prep, with:
 
-First, run the development server:
+- Server-persisted progress (Postgres via Neon/Vercel Postgres)
+- Browser push notifications (Web Push)
+- A daily email digest (Resend) summarizing today's tasks, streak, and progress
+
+## Local development
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in the values described below
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## One-time setup
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+1. **Database** — In the Vercel dashboard: Storage → Create → Postgres (Neon). Linking it to
+   this project sets `DATABASE_URL` automatically. Tables are created on first request
+   (see `lib/db.js`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Resend** — Sign up at [resend.com](https://resend.com), create an API key, and either:
+   - use the shared test sender `onboarding@resend.dev` (only delivers to your own
+     verified Resend account email), or
+   - verify your own domain and set `RESEND_FROM` to an address on it.
 
-## Learn More
+   Set `RESEND_API_KEY` and `DIGEST_EMAIL_TO` as Vercel env vars.
 
-To learn more about Next.js, take a look at the following resources:
+3. **Web Push (VAPID keys)** — generate a keypair once:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   Set `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` as Vercel env vars.
 
-## Deploy on Vercel
+4. **Cron auth** — set a random `CRON_SECRET` env var. Vercel Cron automatically sends it
+   as a Bearer token to `/api/cron/daily`, so no extra config is needed beyond `vercel.json`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5. **App URL** — set `NEXT_PUBLIC_APP_URL` to your production URL (e.g.
+   `https://meta-prep.vercel.app`) once you know it.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The daily cron (`vercel.json`) hits `/api/cron/daily` at 08:00 UTC and sends both the push
+notification and the email digest. Adjust the schedule/timezone in `vercel.json` if needed.
+
+## Enabling push notifications
+
+Open the deployed app and click "enable push notifications" — this registers the service
+worker (`public/sw.js`) and stores your subscription in Postgres so the cron job can reach you.
