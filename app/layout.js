@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Meta PE Prep",
-  description: "62-day Meta Production Engineer interview prep tracker",
+  title: "Meta PE + Amazon SDE Prep",
+  description: "62-day Meta Production Engineer + Amazon SDE Intern interview prep tracker",
 };
 
 export default function RootLayout({ children }) {

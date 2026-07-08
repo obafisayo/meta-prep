@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { WEEKS, TOTAL_DAYS, atMidnight, keyOf, dayIndex, dateAt, weekIndex, fmt, tasksFor } from "@/lib/schedule";
 import PushManager from "./PushManager";
 
@@ -133,13 +134,25 @@ export default function MetaPEGrindTracker() {
       <div style={{ maxWidth: 640, margin: "0 auto" }}>
 
         <div style={{ marginBottom: 4, color: C.faint, fontSize: 12, textTransform: "uppercase", letterSpacing: 2 }}>
-          meta pe prep · 7 jul → 6 sep 2026
+          meta pe + amazon sde prep · 7 jul → 6 sep 2026
         </div>
         <div style={{ color: C.bright, fontSize: 16, marginBottom: 16, wordBreak: "break-word" }}>
           <span style={{ color: C.amber }}>obafisayo@meta-prep</span>
           <span style={{ color: C.faint }}>:~$</span>{" "}
           {beforeStart ? "./countdown" : afterEnd ? "./done" : `./day ${dayNum} of ${TOTAL_DAYS}`}
           <span className="blink" style={{ color: C.amber }}>▮</span>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <Link
+            href="/study"
+            style={{
+              display: "inline-block", fontFamily: MONO, fontSize: 13, textDecoration: "none",
+              color: C.amber, border: `1px solid ${C.border}`, padding: "6px 12px",
+            }}
+          >
+            → study command centre
+          </Link>
         </div>
 
         <PushManager />
@@ -178,6 +191,7 @@ export default function MetaPEGrindTracker() {
             <div style={{ color: C.bright }}>
               {fmt(selectedDate)}
               {selectedIdx === clampedTodayIdx && !beforeStart && !afterEnd && <span style={{ color: C.amber }}> ← today</span>}
+              {selectedDate.getDay() === 5 && <span style={{ color: C.amber, fontSize: 12 }}> · 🕰️ Amazon Friday</span>}
             </div>
             <div style={{ color: C.faint, fontSize: 12 }}>wk {weekIndex(selectedDate) + 1}/9</div>
           </div>
@@ -269,6 +283,9 @@ export default function MetaPEGrindTracker() {
           ))}
         </div>
 
+        <div style={{ border: `1px solid ${C.border}`, background: C.panel, padding: "10px 14px", marginBottom: 14, color: C.faint, fontSize: 11, lineHeight: 1.7 }}>
+          🕰️ <span style={{ color: C.dim }}>Amazon OA protocol:</span> invite lands (check inbox Mondays) → two 90-min timed 2-problem C++ mocks first → sit the real OA in one uninterrupted block, power sorted. Meta work drops to ⭐ minimums that week.
+        </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <span style={{ color: C.faint, fontSize: 11 }}>
             missed a day? hit the ⭐ minimum tomorrow — never double up.

@@ -1,10 +1,14 @@
-# Meta PE Prep Tracker
+# Meta PE + Amazon SDE Prep Tracker
 
-A 62-day tracker (7 Jul → 6 Sep 2026) for Meta Production Engineer interview prep, with:
+A 62-day tracker (7 Jul → 6 Sep 2026) for Meta Production Engineer + Amazon SDE Intern
+interview prep, with:
 
 - Server-persisted progress (Postgres via Neon/Vercel Postgres)
 - Browser push notifications (Web Push)
 - A daily email digest (Resend) summarizing today's tasks, streak, and progress
+- A Study Command Centre (`/study`) — AI-run quizzes, timed mock interviews, an Amazon
+  OA simulation, a "broken server" diagnosis drill, and a weak-area ledger, all backed
+  by the Claude API
 
 ## Local development
 
@@ -40,6 +44,12 @@ npm run dev
 
 5. **App URL** — set `NEXT_PUBLIC_APP_URL` to your production URL (e.g.
    `https://meta-prep.vercel.app`) once you know it.
+
+6. **Claude API (Study Command Centre)** — grab a key from
+   [platform.claude.com](https://platform.claude.com) and set `ANTHROPIC_API_KEY` as a
+   Vercel env var. Requests are proxied server-side through `/api/claude`, so the key is
+   never sent to the browser. Without it, `/study` loads but sessions fail with a
+   "not configured" error.
 
 The daily cron (`vercel.json`) hits `/api/cron/daily` at 08:00 UTC and sends both the push
 notification and the email digest. Adjust the schedule/timezone in `vercel.json` if needed.
