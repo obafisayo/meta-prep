@@ -15,6 +15,7 @@ export default function PushManager() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot capability check on mount
       setStatus("unsupported");
       return;
     }

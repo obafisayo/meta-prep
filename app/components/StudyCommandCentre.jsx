@@ -47,17 +47,18 @@ async function saveStore(data) {
 }
 
 // ─── Claude API (proxied through /api/claude so the key stays server-side) ───
-async function askClaude(messages, system) {
+// Pass `tool` to force a structured, schema-conformant response instead of
+// free text — used for the quiz, which needs guaranteed-valid JSON.
+async function askClaude(messages, system, tool) {
   const res = await fetch("/api/claude", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, system }),
+    body: JSON.stringify({ messages, system, tool }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || `API ${res.status}`);
-  return data.text;
+  return tool ? data.input : data.text;
 }
-const stripFences = (t) => t.replace(/```json|```/g, "").trim();
 
 // ─── Session mode definitions ───
 const MODES = [
@@ -97,7 +98,34 @@ function systemPromptFor(mode, weekIdx, weakAreas, topic) {
 
 const QUIZ_SYSTEM = (weekIdx, weakAreas) => {
   const wk = WEEKS[weekIdx];
-  return `Generate a quiz for a Meta Production Engineering intern candidate on: ${wk.topics}. ${weakAreas.length ? "Bias 1-2 questions toward these past weak areas if in scope: " + weakAreas.slice(-8).join("; ") + "." : ""} Respond with ONLY valid JSON, no markdown fences, no preamble: {"questions":[{"q":"question text (may include a short command or output snippet)","options":["A","B","C","D"],"answer":0,"topic":"2-4 word topic tag","explain":"2-3 sentence explanation of the right answer"}]} — exactly 5 questions, 4 options each, "answer" is the 0-based index of the correct option. Mix conceptual, practical 'what does this command do/output', and one 'spot the false statement'. UK English.`;
+  return `Generate a 5-question multiple-choice quiz for a Meta Production Engineering intern candidate on: ${wk.topics}. ${weakAreas.length ? "Bias 1-2 questions toward these past weak areas if in scope: " + weakAreas.slice(-8).join("; ") + "." : ""} Mix conceptual questions, practical 'what does this command do/output' questions (may include a short command or output snippet), and one 'spot the false statement' question. UK English. Call the submit_quiz tool with your questions.`;
+};
+
+const QUIZ_TOOL = {
+  name: "submit_quiz",
+  description: "Submit the generated multiple-choice quiz.",
+  input_schema: {
+    type: "object",
+    properties: {
+      questions: {
+        type: "array",
+        minItems: 5,
+        maxItems: 5,
+        items: {
+          type: "object",
+          properties: {
+            q: { type: "string", description: "The question text; may include a short command or output snippet." },
+            options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
+            answer: { type: "integer", minimum: 0, maximum: 3, description: "0-based index of the correct option." },
+            topic: { type: "string", description: "2-4 word topic tag." },
+            explain: { type: "string", description: "2-3 sentence explanation of the correct answer." },
+          },
+          required: ["q", "options", "answer", "topic", "explain"],
+        },
+      },
+    },
+    required: ["questions"],
+  },
 };
 
 // ─── Small UI atoms ───
@@ -135,6 +163,7 @@ function ChatSession({ mode, weekIdx, weakAreas, topic, onExit, onWeakAreas }) {
       const reply = await askClaude(history.map(({ role, content }) => ({ role, content })), system);
       setMsgs([...history, { role: "assistant", content: reply }]);
     } catch (e) {
+      console.error("Chat session error:", e);
       setErr("Connection hiccup — tap retry.");
       setMsgs(history);
     } finally { setBusy(false); }
@@ -274,16 +303,19 @@ function QuizSession({ weekIdx, weakAreas, onExit, onWeakAreas }) {
   const load = useCallback(async () => {
     setPhase("loading");
     try {
-      const raw = await askClaude(
+      const result = await askClaude(
         [{ role: "user", content: "Generate the quiz now." }],
-        QUIZ_SYSTEM(weekIdx, weakAreas)
+        QUIZ_SYSTEM(weekIdx, weakAreas),
+        QUIZ_TOOL
       );
-      const parsed = JSON.parse(stripFences(raw));
-      if (!parsed.questions?.length) throw new Error("bad shape");
-      setQuestions(parsed.questions);
+      if (!result?.questions?.length) throw new Error("bad shape: " + JSON.stringify(result));
+      setQuestions(result.questions);
       setIdx(0); setResults([]); setPicked(null);
       setPhase("active");
-    } catch { setPhase("error"); }
+    } catch (e) {
+      console.error("Quiz generation failed:", e);
+      setPhase("error");
+    }
   }, [weekIdx, weakAreas]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect

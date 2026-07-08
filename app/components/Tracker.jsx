@@ -67,6 +67,7 @@ export default function MetaPEGrindTracker() {
     return () => { live = false; };
   }, []);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- setState/setSaveErr are stable useState setters
   const persist = useCallback(async (next, dayKey, dayEntry) => {
     setState(next);
     const ok = await saveDay(dayKey, dayEntry.done, dayEntry.note);
@@ -75,7 +76,7 @@ export default function MetaPEGrindTracker() {
 
   const selectedDate = dateAt(selectedIdx);
   const dayKey = keyOf(selectedDate);
-  const plan = useMemo(() => tasksFor(selectedDate), [selectedIdx]);
+  const plan = useMemo(() => tasksFor(dateAt(selectedIdx)), [selectedIdx]);
   const dayData = state?.days?.[dayKey] || { done: {}, note: "" };
 
   const toggle = (taskId) => {
