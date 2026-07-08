@@ -31,22 +31,26 @@ export default function PushManager() {
       setStatus("misconfigured");
       return;
     }
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      setStatus("denied");
-      return;
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setStatus("denied");
+        return;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub),
+      });
+      setStatus("subscribed");
+    } catch {
+      setStatus("error");
     }
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    });
-    await fetch("/api/push/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sub),
-    });
-    setStatus("subscribed");
   };
 
   if (status === "unsupported" || status === "checking") return null;
@@ -56,12 +60,13 @@ export default function PushManager() {
     status === "requesting" ? "requesting…" :
     status === "denied" ? "notifications blocked — enable in browser settings" :
     status === "misconfigured" ? "push not configured yet" :
+    status === "error" ? "push registration failed — try again" :
     "enable push notifications";
 
   return (
     <button
-      onClick={status === "ready" ? subscribe : undefined}
-      disabled={status !== "ready"}
+      onClick={status === "ready" || status === "error" ? subscribe : undefined}
+      disabled={status !== "ready" && status !== "error"}
       style={{
         background: "none",
         border: "1px solid #3A2F1C",
@@ -69,7 +74,7 @@ export default function PushManager() {
         fontFamily: 'ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace',
         fontSize: 11,
         padding: "4px 10px",
-        cursor: status === "ready" ? "pointer" : "default",
+        cursor: status === "ready" || status === "error" ? "pointer" : "default",
         marginBottom: 12,
       }}
     >

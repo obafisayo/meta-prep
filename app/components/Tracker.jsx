@@ -219,7 +219,7 @@ export default function MetaPEGrindTracker() {
                 <span aria-hidden style={{ flexShrink: 0, color: done ? C.amber : C.faint }}>
                   [{done ? "x" : " "}]
                 </span>
-                <span style={{ textDecoration: done ? "line-through" : "none", textDecorationColor: C.faint }}>
+                <span style={{ textDecorationLine: done ? "line-through" : "none", textDecorationColor: C.faint }}>
                   {t.label}{t.star && <span style={{ color: C.amber }}> ⭐min: 20 min + 3 commands</span>}
                 </span>
               </button>

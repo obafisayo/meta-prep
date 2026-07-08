@@ -474,38 +474,38 @@ export default function StudyCommandCentre() {
 
             {/* session cards */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10, marginBottom: 18 }}>
-              {MODES.map((m) => (
-                <button key={m.id}
-                  onClick={() => {
-                    if (m.id === "dive") return; // dive uses the topic input below
-                    startSession(m.id);
-                  }}
-                  disabled={m.id === "dive"}
-                  style={{
-                    textAlign: "left", fontFamily: MONO, background: C.panel, border: `1px solid ${C.border}`,
-                    padding: "14px 14px 12px", cursor: m.id === "dive" ? "default" : "pointer", color: C.dim,
-                  }}>
-                  <div style={{ color: C.amber, fontSize: 15, marginBottom: 4 }}>
-                    <span style={{ display: "inline-block", width: 22 }}>{m.icon}</span>{m.name}
-                    {m.id === "revisit" && store.weakAreas?.length > 0 && (
-                      <span style={{ color: C.red, fontSize: 11 }}> ({store.weakAreas.length} logged)</span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 12, lineHeight: 1.5 }}>{m.desc}</div>
-                  {m.id === "dive" && (
-                    <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-                      <input
-                        value={diveTopic}
-                        onChange={(e) => setDiveTopic(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter" && diveTopic.trim()) startSession("dive", diveTopic.trim()); }}
-                        placeholder="topic… e.g. inodes, signals"
-                        style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, color: C.bright, fontFamily: MONO, fontSize: 12, padding: "6px 8px", outline: "none", minWidth: 0 }}
-                      />
-                      <button onClick={() => diveTopic.trim() && startSession("dive", diveTopic.trim())} style={{ ...btnStyle(true), padding: "6px 10px", fontSize: 12 }}>go</button>
+              {MODES.map((m) => {
+                const isDive = m.id === "dive";
+                const Card = isDive ? "div" : "button";
+                return (
+                  <Card key={m.id}
+                    onClick={isDive ? undefined : () => startSession(m.id)}
+                    style={{
+                      textAlign: "left", fontFamily: MONO, background: C.panel, border: `1px solid ${C.border}`,
+                      padding: "14px 14px 12px", cursor: isDive ? "default" : "pointer", color: C.dim,
+                    }}>
+                    <div style={{ color: C.amber, fontSize: 15, marginBottom: 4 }}>
+                      <span style={{ display: "inline-block", width: 22 }}>{m.icon}</span>{m.name}
+                      {m.id === "revisit" && store.weakAreas?.length > 0 && (
+                        <span style={{ color: C.red, fontSize: 11 }}> ({store.weakAreas.length} logged)</span>
+                      )}
                     </div>
-                  )}
-                </button>
-              ))}
+                    <div style={{ fontSize: 12, lineHeight: 1.5 }}>{m.desc}</div>
+                    {isDive && (
+                      <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                        <input
+                          value={diveTopic}
+                          onChange={(e) => setDiveTopic(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter" && diveTopic.trim()) startSession("dive", diveTopic.trim()); }}
+                          placeholder="topic… e.g. inodes, signals"
+                          style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, color: C.bright, fontFamily: MONO, fontSize: 12, padding: "6px 8px", outline: "none", minWidth: 0 }}
+                        />
+                        <button onClick={() => diveTopic.trim() && startSession("dive", diveTopic.trim())} style={{ ...btnStyle(true), padding: "6px 10px", fontSize: 12 }}>go</button>
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
 
             {/* weak areas ledger */}
